@@ -1,0 +1,166 @@
+/*
+	Put anything you reference with "url()" in ../assets/
+	This way, you can minify your application, and just remove the "source" folder for production
+*/
+
+@font-face {
+	font-family: 'entypo';
+	src:url('../assets/entypo.eot');
+	src:url('../assets/entypo.eot?#iefix') format('embedded-opentype'),
+		url('../assets/entypo.svg#entypo') format('svg'),
+		url('../assets/entypo.woff') format('woff'),
+		url('../assets/entypo.ttf') format('truetype');
+	font-weight: normal;
+	font-style: normal;
+}
+
+[class^="icon-"]:before, [class*=" icon-"]:before {
+	font-family: 'entypo';
+	font-style: normal;
+	speak: none;
+	font-weight: normal;
+	line-height: 1;
+	-webkit-font-smoothing: antialiased;
+}
+
+.icon-list:before {
+	content: "\e00c";
+}
+.icon-newspaper:before {
+	content: "\e00d";
+}
+.icon-comment:before {
+	content: "\e000";
+}
+.icon-share:before {
+	content: "\e002";
+}
+.icon-forward:before {
+	content: "\e003";
+}
+.icon-cd:before {
+	content: "\e004";
+}
+.icon-network:before {
+	content: "\e005";
+}
+.icon-user:before {
+	content: "\e006";
+}
+.icon-thermometer:before {
+	content: "\e007";
+}
+.icon-flag:before {
+	content: "\e001";
+}
+
+.icono {
+ -webkit-mask-image: -webkit-gradient(linear, left top, left bottom, from(rgba(0,0,0,1)), to(rgba(0,0,0,0.5)));
+}
+.icono.on {
+    color: orange;
+}
+
+.votes {
+    min-width:40px;
+    margin-right: 5px;
+    text-align:center;
+    padding:3px;
+    border-radius:5px;
+    border: 2px solid orange;
+    background-image: -webkit-gradient(linear, left top, left bottom, from(salmon), to(lightsalmon));
+    font-weight: bold;
+}
+
+.list-item {
+    height:100px;
+	padding: 12px 16px;
+	background-color: #333333;
+	font-size: 14px;
+	color: white;
+	background-image: -webkit-gradient(linear, 0 0, 100% 0, from(rgba(255, 160, 122, 0.1)), to(lightsalmon));
+	background-repeat:no-repeat;
+	background-size:100% 1px;
+	background-position:0 100%, 100% 0;
+	
+}
+
+.list-item-comments {
+    overflow:hidden;
+    height:1%;
+	padding: 12px 16px;
+	font-size: 14px;
+	color: black;
+	background-color: rgba(255, 160, 122, 0.1);
+	background-image: -webkit-gradient(linear, 0 0, 100% 0, from(rgba(255, 160, 122, 0.1)), to(lightsalmon));
+	background-repeat:no-repeat;
+	background-size:100% 1px;
+	background-position:0 100%, 100% 0;
+	
+}
+
+.list-description {
+overflow:hidden;
+height:1%;
+	font-size: 14px;
+	background-image: -webkit-gradient(linear, 0 0, 100% 0, from(rgba(255, 160, 122, 0.1)), to(lightsalmon));
+}
+
+.list-item-selected {
+    background: orange;
+}
+
+.opcion {
+    padding: 10px;
+    font-size: 20px;
+}
+.opcion:nth-child(-n+2) {
+    border-bottom: 1px solid lightgray;
+}
+
+.control {
+    width: 25%;
+    color: lightsalmon;
+    font-size: 30px;
+    text-align: center;
+    float: left;
+    margin-top: 5px;
+    -webkit-mask-image: -webkit-gradient(linear, left top, left bottom, from(rgba(0,0,0,1)), to(rgba(0,0,0,0.5)));
+    text-shadow: rgba(255, 255, 255, 0.35) 0 1px 1px;
+}
+
+.control:active {
+    color: salmon;
+    text-shadow: none;
+}
+
+.logo {
+    color: orange;
+    position: relative;
+    bottom: 7px;
+    font-weight: bold;
+    text-shadow: rgba(255, 255, 255, 0.35) 0 1px 1px;
+}
+
+.enyo-puller-text {
+    font-size: 15px;
+}
+
+.loading {
+    position: absolute;
+    top: 19px;
+    width: 22px;
+    height: 22px;
+    -webkit-mask-image: -webkit-gradient(linear, left top, left bottom, from(rgba(0,0,0,1)), to(rgba(0,0,0,0.5)));
+    -webkit-animation: rotating 0.5s linear infinite;
+}
+
+@-webkit-keyframes rotating {
+    from{
+        -webkit-transform: rotate(0deg);
+    }
+    to{
+        -webkit-transform: rotate(360deg);
+    }
+}
+
