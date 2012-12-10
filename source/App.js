@@ -359,7 +359,7 @@ enyo.kind({
             {name: 'comentarios', kind: 'Comentarios'}
         ]},
         {kind: 'Peticiones', classes: 'onyx'},
-        {kind: 'Signals', onPanel: 'panel', onComentarios: 'showComments', onNoticia: 'showNoticia', onbackbutton: 'back', onCargando:'cargando'}
+        {kind: 'Signals', onPanel: 'panel', onComentarios: 'showComments', onbackbutton: 'back', onCargando:'cargando'}
 	],
 	back: function(e) {
 	    if (this.$.paginas.getIndex() == 0) {
@@ -394,11 +394,6 @@ enyo.kind({
         });
         this.$.paginas.setIndex(1);
     },
-    showNoticia: function(s, p) {
-        this.$.noticia.setUrl('');
-        this.$.noticia.setUrl(p);
-        this.$.paginas.setIndex(2);
-    },
 	rendered: function() {
 	    this.inherited(arguments);
 
@@ -414,14 +409,14 @@ enyo.kind({
 (function(window, undefined) {
     var MENEAME = window.MENEAME || {};
 
-    MENEAME.ant = 'http://query.yahooapis.com/v1/public/yql?q=';
-    MENEAME.post = '&format=json';
+    var ant = 'http://query.yahooapis.com/v1/public/yql?q=',
+        post = '&format=json';
 
-    MENEAME.portada = MENEAME.ant + encodeURIComponent("select * from rss where url = 'http://www.meneame.net/rss2.php'") + MENEAME.post;
-    MENEAME.pendientes = MENEAME.ant + encodeURIComponent("select * from rss where url = 'http://www.meneame.net/rss2.php?status=queued'") + MENEAME.post;
+    MENEAME.portada = ant + encodeURIComponent("select * from rss where url = 'http://www.meneame.net/rss2.php'") + post;
+    MENEAME.pendientes = ant + encodeURIComponent("select * from rss where url = 'http://www.meneame.net/rss2.php?status=queued'") + post;
 
     MENEAME.comentarios = function(id) {
-        return MENEAME.ant + encodeURIComponent("select * from rss where url = 'http://www.meneame.net/comments_rss2.php?id=" + id + "'") + MENEAME.post;
+        return ant + encodeURIComponent("select * from rss where url = 'http://www.meneame.net/comments_rss2.php?id=" + id + "'") + post;
     }
 
     MENEAME.secciones = {
