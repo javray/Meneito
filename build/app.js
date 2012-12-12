@@ -3509,45 +3509,6 @@ c.toolbarIndex === undefined && (c.toolbarIndex = t);
 }
 });
 
-// phonegap-events.js
-
-(function() {
-var e = [ "deviceready", "pause", "resume", "online", "offline", "backbutton", "batterycritical", "batterylow", "batterystatus", "menubutton", "searchbutton", "startcallbutton", "endcallbutton", "volumedownbutton", "volumeupbutton" ];
-(!window.cordova || !window.PhoneGap) && enyo.error("Phonegap needs to be loaded before enyo for events to attach correctly");
-for (var t = 0, n, r; n = e[t]; t++) r = enyo.bind(enyo.Signals, "send", "on" + n), document.addEventListener(n, r, !1);
-})();
-
-// share.js
-
-var Share = function() {};
-
-Share.prototype.show = function(e, t, n) {
-return cordova.exec(function(e) {
-t(e);
-}, function(e) {
-n(e);
-}, "Share", "", [ e ]);
-}, window.plugins || (window.plugins = {}), window.plugins.share || (window.plugins.share = new Share);
-
-// childbrowser.js
-
-function ChildBrowser() {}
-
-ChildBrowser.CLOSE_EVENT = 0, ChildBrowser.LOCATION_CHANGED_EVENT = 1, ChildBrowser.prototype.showWebPage = function(e, t) {
-t = t || {
-showLocationBar: !0,
-locationBarAlign: "top"
-}, cordova.exec(this._onEvent, this._onError, "ChildBrowser", "showWebPage", [ e, t ]);
-}, ChildBrowser.prototype.close = function() {
-cordova.exec(null, null, "ChildBrowser", "close", []);
-}, ChildBrowser.prototype.openExternal = function(e, t) {
-t === !0 ? navigator.app.loadUrl(e) : cordova.exec(null, null, "ChildBrowser", "openExternal", [ e, t ]);
-}, ChildBrowser.prototype._onEvent = function(e) {
-e.type == ChildBrowser.CLOSE_EVENT && typeof window.plugins.childBrowser.onClose == "function" && window.plugins.childBrowser.onClose(), e.type == ChildBrowser.LOCATION_CHANGED_EVENT && typeof window.plugins.childBrowser.onLocationChange == "function" && window.plugins.childBrowser.onLocationChange(e.location);
-}, ChildBrowser.prototype._onError = function(e) {
-typeof window.plugins.childBrowser.onError == "function" && window.plugins.childBrowser.onError(e);
-}, ChildBrowser.prototype.install = function() {}, window.plugins || (window.plugins = {}), window.plugins.childBrowser || (window.plugins.childBrowser = new ChildBrowser);
-
 // Utils.js
 
 function strip_tags(e, t) {
@@ -3601,53 +3562,6 @@ this.$.description.setContent(this.description);
 },
 thumbChanged: function() {
 this.$.thumb.setSrc(this.thumb);
-}
-}), enyo.kind({
-name: "Controles",
-kind: "Control",
-style: "background: rgba(255, 160, 122, 0.1); height: 40px;",
-classes: "onyx",
-published: {
-cid: "",
-subject: "",
-text: "",
-url: "",
-murl: ""
-},
-components: [ {
-classes: "icon-comment control",
-ontap: "comments"
-}, {
-classes: "icon-forward control",
-ontap: "noticia"
-}, {
-classes: "icon-network control",
-ontap: "noticia_m"
-}, {
-classes: "icon-share control",
-ontap: "share"
-} ],
-comments: function() {
-enyo.Signals.send("onComentarios", this.cid);
-},
-noticia: function() {
-window.plugins.childBrowser.showWebPage(this.url, {
-showLocationBar: !1
-});
-},
-noticia_m: function() {
-window.plugins.childBrowser.showWebPage(this.murl, {
-showLocationBar: !1
-});
-},
-share: function() {
-var e = this;
-window.plugins.share.show({
-subject: e.subject,
-text: e.text
-}, function() {}, function() {
-alert("Share failed");
-});
 }
 }), enyo.kind({
 name: "Noticias",
@@ -3897,6 +3811,43 @@ style: "position: relative;left: 43px;bottom: 5px;",
 content: "Cargando..."
 } ]
 }), enyo.kind({
+name: "Controles",
+kind: "Control",
+style: "background: rgba(255, 160, 122, 0.1); height: 40px;",
+classes: "onyx",
+published: {
+cid: "",
+subject: "",
+text: "",
+url: "",
+murl: ""
+},
+components: [ {
+classes: "icon-comment control",
+ontap: "comments"
+}, {
+classes: "icon-forward control",
+ontap: "noticia"
+}, {
+classes: "icon-network control",
+ontap: "noticia_m"
+}, {
+classes: "icon-share control",
+ontap: "share"
+} ],
+comments: function() {
+enyo.Signals.send("onComentarios", this.cid);
+},
+noticia: function() {
+MENEAME.plataformas[MENEAME.plataforma].showPage(this.url);
+},
+noticia_m: function() {
+MENEAME.plataformas[MENEAME.plataforma].showPage(this.murl);
+},
+share: function() {
+MENEAME.plataformas[MENEAME.plataforma].share(this.subject, this.text);
+}
+}), enyo.kind({
 name: "App",
 kind: "FittableRows",
 classes: "enyo-fit onyx",
@@ -3908,11 +3859,20 @@ style: "height: 40px",
 components: [ {
 classes: "logo",
 content: "Meneito"
+}, {
+name: "volverb",
+kind: "onyx.Button",
+content: "Volver",
+classes: "volver",
+showing: !1,
+ontap: "volver"
 } ]
 }, {
 name: "paginas",
 kind: "Panels",
 fit: !0,
+draggable: !1,
+animate: !1,
 realtimeFit: !0,
 classes: "enyo-border-box",
 components: [ {
@@ -3929,6 +3889,7 @@ name: "paneles",
 kind: "Panels",
 fit: !0,
 draggable: !1,
+animate: !1,
 realtimeFit: !0,
 classes: "enyo-border-box",
 components: [ {
@@ -3952,12 +3913,18 @@ classes: "onyx"
 kind: "Signals",
 onPanel: "panel",
 onComentarios: "showComments",
-onNoticia: "showNoticia",
 onbackbutton: "back",
-onCargando: "cargando"
+onCargando: "cargando",
+ondeviceready: "deviceReady"
 } ],
+deviceReady: function() {
+MENEAME.plataformas[MENEAME.plataforma].ready();
+},
+volver: function() {
+this.$.paginas.setIndex(0), this.$.volverb.hide();
+},
 back: function(e) {
-this.$.paginas.getIndex() == 0 ? navigator.app.exitApp() : this.$.paginas.setIndex(0);
+this.$.paginas.getIndex() == 0 ? navigator.app.exitApp() : (this.$.paginas.setIndex(0), this.$.volverb.hide());
 },
 cargando: function() {
 this.$.cargando.hide();
@@ -3972,10 +3939,7 @@ showComments: function(e, t) {
 this.$.comentarios.setCount(0), enyo.Signals.send("onComments", {
 id: t,
 obj: this.$.comentarios
-}), this.$.paginas.setIndex(1);
-},
-showNoticia: function(e, t) {
-this.$.noticia.setUrl(""), this.$.noticia.setUrl(t), this.$.paginas.setIndex(2);
+}), this.$.paginas.setIndex(1), this.$.volverb.show();
 },
 rendered: function() {
 this.inherited(arguments), this.$.cargando.show(), enyo.Signals.send("onNoticias", {
@@ -3984,11 +3948,60 @@ obj: this.$.portada
 });
 }
 }), function(e, t) {
-var n = e.MENEAME || {};
-n.ant = "http://query.yahooapis.com/v1/public/yql?q=", n.post = "&format=json", n.portada = n.ant + encodeURIComponent("select * from rss where url = 'http://www.meneame.net/rss2.php'") + n.post, n.pendientes = n.ant + encodeURIComponent("select * from rss where url = 'http://www.meneame.net/rss2.php?status=queued'") + n.post, n.comentarios = function(e) {
-return n.ant + encodeURIComponent("select * from rss where url = 'http://www.meneame.net/comments_rss2.php?id=" + e + "'") + n.post;
+var n = e.MENEAME || {}, r = "http://query.yahooapis.com/v1/public/yql?q=", i = "&format=json", s = e.navigator.userAgent;
+n.portada = r + encodeURIComponent("select * from rss where url = 'http://www.meneame.net/rss2.php'") + i, n.pendientes = r + encodeURIComponent("select * from rss where url = 'http://www.meneame.net/rss2.php?status=queued'") + i, n.comentarios = function(e) {
+return r + encodeURIComponent("select * from rss where url = 'http://www.meneame.net/comments_rss2.php?id=" + e + "'") + i;
 }, n.secciones = {
 portada: 0,
 pendientes: 1
+};
+switch (!0) {
+case s.match(/Android/) != null:
+n.plataforma = "Android";
+break;
+case s.match(/iPhone|iPad|iPod/) != null:
+n.plataforma = "iOS";
+break;
+default:
+n.plataforma = "default";
+}
+n.plataformas = {
+Android: {
+ready: function() {
+enyo.dispatcher.listen(document, "backbutton");
+},
+showPage: function(t) {
+e.plugins.childBrowser.showWebPage(t, {
+showLocationBar: !1
+});
+},
+share: function(t, n) {
+e.plugins.share.show({
+subject: t,
+text: n
+}, function() {}, function() {
+alert("Share failed");
+});
+}
+},
+iOS: {
+ready: function() {
+ChildBrowser.install();
+},
+showPage: function(t) {
+var n = e.plugins.childBrowser;
+n.onLocationChange = function() {}, n.onClose = function() {}, n.onOpenExternal = function() {}, n.showWebPage(t);
+},
+share: function(e, t) {
+navigator.notification.alert("Funcionalidad en desarrollo, s\u00e9 paciente :-)", function() {}, "Meneito");
+}
+},
+"default": {
+ready: function() {},
+showPage: function(t) {
+e.open(t);
+},
+share: function(e, t) {}
+}
 }, e.MENEAME = n;
 }(window);

@@ -55,7 +55,7 @@
 }
 
 .icono {
- -webkit-mask-image: -webkit-gradient(linear, left top, left bottom, from(rgba(0,0,0,1)), to(rgba(0,0,0,0.5)));
+/* -webkit-mask-image: -webkit-gradient(linear, left top, left bottom, from(rgba(0,0,0,1)), to(rgba(0,0,0,0.5)));*/
 }
 .icono.on {
     color: orange;
@@ -78,10 +78,13 @@
 	background-color: #333333;
 	font-size: 14px;
 	color: white;
+	border-bottom: 1px solid lightsalmon;
+	/*
 	background-image: -webkit-gradient(linear, 0 0, 100% 0, from(rgba(255, 160, 122, 0.1)), to(lightsalmon));
 	background-repeat:no-repeat;
 	background-size:100% 1px;
 	background-position:0 100%, 100% 0;
+	*/
 	
 }
 
@@ -125,7 +128,7 @@ height:1%;
     text-align: center;
     float: left;
     margin-top: 5px;
-    -webkit-mask-image: -webkit-gradient(linear, left top, left bottom, from(rgba(0,0,0,1)), to(rgba(0,0,0,0.5)));
+    /*-webkit-mask-image: -webkit-gradient(linear, left top, left bottom, from(rgba(0,0,0,1)), to(rgba(0,0,0,0.5)));*/
     text-shadow: rgba(255, 255, 255, 0.35) 0 1px 1px;
 }
 
@@ -151,8 +154,17 @@ height:1%;
     top: 19px;
     width: 22px;
     height: 22px;
-    -webkit-mask-image: -webkit-gradient(linear, left top, left bottom, from(rgba(0,0,0,1)), to(rgba(0,0,0,0.5)));
+    /*-webkit-mask-image: -webkit-gradient(linear, left top, left bottom, from(rgba(0,0,0,1)), to(rgba(0,0,0,0.5)));*/
     -webkit-animation: rotating 0.5s linear infinite;
+}
+
+.volver {
+    background-color: orange!important;
+    color: #555656!important;
+    height: 30px!important;
+    position: relative;
+    bottom: 6px;
+    float: right;
 }
 
 @-webkit-keyframes rotating {

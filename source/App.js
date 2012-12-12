@@ -339,6 +339,39 @@ enyo.kind({
 });
 
 enyo.kind({
+    name: 'Controles',
+    kind: 'Control',
+    style: 'background: rgba(255, 160, 122, 0.1); height: 40px;',
+    classes: 'onyx',
+    published: {
+        cid: '',
+        subject: '',
+        text: '',
+        url: '',
+        murl: ''
+    },
+    components: [
+        {classes: 'icon-comment control', ontap: 'comments'}, 
+        {classes: 'icon-forward control', ontap: 'noticia'},
+        {classes: 'icon-network control', ontap: 'noticia_m'},
+        {classes: 'icon-share control', ontap: 'share'}
+    ],
+    comments: function() {
+        enyo.Signals.send('onComentarios', this.cid);
+    },
+    noticia: function() {
+        MENEAME.plataformas[MENEAME.plataforma].showPage(this.url);
+    },
+    noticia_m: function() {
+        MENEAME.plataformas[MENEAME.plataforma].showPage(this.murl);
+    },
+    share: function() {
+        MENEAME.plataformas[MENEAME.plataforma].share(this.subject, this.text);
+    }
+
+});
+
+enyo.kind({
 	name: "App",
     kind: "FittableRows", 
 	classes: "enyo-fit onyx", 
@@ -346,12 +379,13 @@ enyo.kind({
 	components:[
         {kind: "onyx.Toolbar", classes: "onyx-menu-toolbar", style: 'height: 40px', components: [
 			{classes: 'logo', content: "Meneito"},
+			{name: 'volverb', kind:"onyx.Button", content: "Volver", classes: 'volver', showing: false, ontap:"volver"}
 		]},
-        {name: 'paginas', kind: 'Panels', fit: true, realtimeFit: true, classes: 'enyo-border-box', components: [
+        {name: 'paginas', kind: 'Panels', fit: true, draggable: false, animate: false, realtimeFit: true, classes: 'enyo-border-box', components: [
             {kind: 'FittableRows', classes: 'enyo-fit onyx', components: [
                 {kind: 'Secciones'},
                 {name: 'cargando', kind: 'Cargando', showing: false},
-                {name: 'paneles', kind: "Panels", fit:true, draggable: false, realtimeFit: true, classes: "enyo-border-box", components: [
+                {name: 'paneles', kind: "Panels", fit:true, draggable: false, animate: false, realtimeFit: true, classes: "enyo-border-box", components: [
                     {name: 'portada', kind: "Noticias", onPulsado: 'pulsado'},
                     {name: 'pendientes', kind: "Noticias", onPulsado: 'pulsado'},
                 ]},
@@ -359,14 +393,22 @@ enyo.kind({
             {name: 'comentarios', kind: 'Comentarios'}
         ]},
         {kind: 'Peticiones', classes: 'onyx'},
-        {kind: 'Signals', onPanel: 'panel', onComentarios: 'showComments', onbackbutton: 'back', onCargando:'cargando'}
+        {kind: 'Signals', onPanel: 'panel', onComentarios: 'showComments', onbackbutton: 'back', onCargando:'cargando', ondeviceready: "deviceReady"}
 	],
+	deviceReady: function() {
+	    MENEAME.plataformas[MENEAME.plataforma].ready();
+    },
+    volver: function() {
+        this.$.paginas.setIndex(0);
+        this.$.volverb.hide();
+    },
 	back: function(e) {
 	    if (this.$.paginas.getIndex() == 0) {
 	        navigator.app.exitApp();
         }
         else {
 	        this.$.paginas.setIndex(0);
+            this.$.volverb.hide();
         }
     },
     cargando: function() {
@@ -393,6 +435,7 @@ enyo.kind({
             obj: this.$.comentarios
         });
         this.$.paginas.setIndex(1);
+        this.$.volverb.show();
     },
 	rendered: function() {
 	    this.inherited(arguments);
@@ -412,6 +455,8 @@ enyo.kind({
     var ant = 'http://query.yahooapis.com/v1/public/yql?q=',
         post = '&format=json';
 
+    var userAgent = window.navigator.userAgent;
+
     MENEAME.portada = ant + encodeURIComponent("select * from rss where url = 'http://www.meneame.net/rss2.php'") + post;
     MENEAME.pendientes = ant + encodeURIComponent("select * from rss where url = 'http://www.meneame.net/rss2.php?status=queued'") + post;
 
@@ -422,6 +467,71 @@ enyo.kind({
     MENEAME.secciones = {
         portada: 0,
         pendientes: 1
+    }
+
+    switch (true) {
+        case (userAgent.match(/Android/) != null):
+            MENEAME.plataforma = 'Android';
+            break;
+        case (userAgent.match(/iPhone|iPad|iPod/) != null):
+            MENEAME.plataforma = 'iOS';
+            break;
+        default:
+            MENEAME.plataforma = 'default';
+            break;
+    }
+
+    /*
+    if (MENEAME.plataforma != 'default') {
+        var script = document.createElement('script');
+        script.src = 'assets/js/' + MENEAME.plataforma + '.js';
+        script.async = true;
+        document.getElementsByTagName('head')[0].appendChild(script);
+    }
+    */
+
+    MENEAME.plataformas = {
+        Android: {
+            ready: function() {
+                enyo.dispatcher.listen(document, "backbutton");
+            },
+            showPage: function(url) {
+                window.plugins.childBrowser.showWebPage(url, { showLocationBar: false});
+            },
+            share: function(subject, text) {
+                window.plugins.share.show({
+                    subject: subject,
+                    text: text},
+                    function() {}, // Success function
+                    function() {alert('Share failed')} // Failure function
+                );
+            }
+        },
+        iOS: {
+            ready: function() {
+	            ChildBrowser.install();
+            },
+            showPage: function(url) {
+                var cb =  window.plugins.childBrowser;
+                cb.onLocationChange = function(){ };
+		        cb.onClose = function(){ };
+		        cb.onOpenExternal = function(){};
+                cb.showWebPage(url);
+            },
+            share: function(subject, text) {
+                navigator.notification.alert('Funcionalidad en desarrollo, sé paciente :-)', function(){}, 'Meneito');
+                //window.plugins.shareKit.share(subject, text);
+            }
+        },
+        default: {
+            ready: function() {
+            },
+            showPage: function(url) {
+                window.open(url);
+            },
+            share: function(subject, text) {
+            }
+        }
     }
 
     window.MENEAME = MENEAME;
