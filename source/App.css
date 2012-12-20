@@ -54,6 +54,10 @@
 	content: "\e001";
 }
 
+.icon-arrow-left:before {
+	content: "\e008";
+}
+
 .icono {
 /* -webkit-mask-image: -webkit-gradient(linear, left top, left bottom, from(rgba(0,0,0,1)), to(rgba(0,0,0,0.5)));*/
 }
@@ -150,21 +154,29 @@ height:1%;
 }
 
 .loading {
-    position: absolute;
-    top: 19px;
-    width: 22px;
-    height: 22px;
     /*-webkit-mask-image: -webkit-gradient(linear, left top, left bottom, from(rgba(0,0,0,1)), to(rgba(0,0,0,0.5)));*/
     -webkit-animation: rotating 0.5s linear infinite;
 }
 
+.loading.pull {
+    position: absolute;
+    top: 20px;
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+}
+
 .volver {
-    background-color: orange!important;
-    color: #555656!important;
-    height: 30px!important;
-    position: relative;
-    bottom: 6px;
+    color: orange;
+    height: 20px;
     float: right;
+    font-size: 30px;
+    position: relative;
+    bottom: 10px
+}
+
+.volver:active {
+    color: darkorange;
 }
 
 @-webkit-keyframes rotating {

@@ -29,10 +29,10 @@ enyo.kind({
     pullingMessage:'Desliza hacia abajo para refrescar...',
     pulledMessage: 'Suelta para refrescar...',
     loadingMessage: 'Cargando...',
-    loadingIconClass: 'icon-cd loading',
+    loadingIconClass: 'icon-cd loading pull',
     components: [
         {name:'principal', style: "padding: 10px;", classes: "enyo-border-box list-item", ontap: 'pulse', components: [
-            {style: 'float:left;min-height:80px:width:40px', components:[
+            {style: 'float:left;min-height:80px;width:55px', components:[
                 {name: 'votes', classes: 'votes'}, 
                 {tag:'br'},
                 {name: 'comments', classes: 'icon-comment', style: 'color: orange;font-size:15px'},
@@ -129,7 +129,6 @@ enyo.kind({
             this.$.user.setContent(' ' + item.user);
             this.$.domain.setContent(item.domain);
 
-
             if (e.originator.isSelected(index) && !this.$.descripcion.showing) {
 
                 if (item.thumb != null) {
@@ -152,7 +151,6 @@ enyo.kind({
 
             }
             else {
-
                 this.$.descripcion.hide();
                 this.$.controles.hide();
             }
@@ -331,9 +329,9 @@ enyo.kind({
 enyo.kind({
     name: 'Cargando',
     kind: 'Control',
-    style: 'font-size: 15px;margin: 0px 0px 20px 35px',
+    style: 'font-size: 15px;margin: 20px 0px 20px 35px',
     components: [
-        {tag: 'span', classes: 'icon-cd loading', style: 'position: relative;font-size:22px'},
+        {tag: 'span', classes: 'icon-cd loading', style: 'position: absolute;font-size:20px;height:20px;width:20px;top:70px'},
         {style: 'position: relative;left: 43px;bottom: 5px;', content: 'Cargando...'}
     ]
 });
@@ -379,7 +377,7 @@ enyo.kind({
 	components:[
         {kind: "onyx.Toolbar", classes: "onyx-menu-toolbar", style: 'height: 40px', components: [
 			{classes: 'logo', content: "Meneito"},
-			{name: 'volverb', kind:"onyx.Button", content: "Volver", classes: 'volver', showing: false, ontap:"volver"}
+            {name: 'volverb', classes: 'icon-arrow-left volver', showing: false, ontap: 'volver'}
 		]},
         {name: 'paginas', kind: 'Panels', fit: true, draggable: false, animate: false, realtimeFit: true, classes: 'enyo-border-box', components: [
             {kind: 'FittableRows', classes: 'enyo-fit onyx', components: [
@@ -480,15 +478,6 @@ enyo.kind({
             MENEAME.plataforma = 'default';
             break;
     }
-
-    /*
-    if (MENEAME.plataforma != 'default') {
-        var script = document.createElement('script');
-        script.src = 'assets/js/' + MENEAME.plataforma + '.js';
-        script.async = true;
-        document.getElementsByTagName('head')[0].appendChild(script);
-    }
-    */
 
     MENEAME.plataformas = {
         Android: {

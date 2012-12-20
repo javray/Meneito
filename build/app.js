@@ -3572,14 +3572,14 @@ toggleSelected: !0,
 pullingMessage: "Desliza hacia abajo para refrescar...",
 pulledMessage: "Suelta para refrescar...",
 loadingMessage: "Cargando...",
-loadingIconClass: "icon-cd loading",
+loadingIconClass: "icon-cd loading pull",
 components: [ {
 name: "principal",
 style: "padding: 10px;",
 classes: "enyo-border-box list-item",
 ontap: "pulse",
 components: [ {
-style: "float:left;min-height:80px:width:40px",
+style: "float:left;min-height:80px;width:55px",
 components: [ {
 name: "votes",
 classes: "votes"
@@ -3801,11 +3801,11 @@ n.top == n.maxTop && !this.moring && r < i && (this.moring = !0, r += 10, this.i
 }), enyo.kind({
 name: "Cargando",
 kind: "Control",
-style: "font-size: 15px;margin: 0px 0px 20px 35px",
+style: "font-size: 15px;margin: 20px 0px 20px 35px",
 components: [ {
 tag: "span",
 classes: "icon-cd loading",
-style: "position: relative;font-size:22px"
+style: "position: absolute;font-size:20px;height:20px;width:20px;top:70px"
 }, {
 style: "position: relative;left: 43px;bottom: 5px;",
 content: "Cargando..."
@@ -3861,9 +3861,7 @@ classes: "logo",
 content: "Meneito"
 }, {
 name: "volverb",
-kind: "onyx.Button",
-content: "Volver",
-classes: "volver",
+classes: "icon-arrow-left volver",
 showing: !1,
 ontap: "volver"
 } ]
