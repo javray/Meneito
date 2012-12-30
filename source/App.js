@@ -195,6 +195,10 @@ enyo.kind({
             p.obj.setItems(r.query.results.item);
         });
 
+        jsonp.error(this, function(s, r) {
+            enyo.Signals.send('onErrorComments', p.id);
+        });
+
         jsonp.go();
     },
     noticias: function(s, p) {
@@ -209,6 +213,10 @@ enyo.kind({
         jsonp.response(this, function(s, r) {
             p.obj.setItems(r.query.results.item);
             enyo.Signals.send('onCargando');
+        });
+
+        jsonp.error(this, function(s, r) {
+            enyo.Signals.send('onError', p.obj);
         });
 
         jsonp.go();
@@ -337,6 +345,33 @@ enyo.kind({
 });
 
 enyo.kind({
+    name: 'Error',
+    kind: 'Control',
+    style: 'font-size: 15px; margin: 20px 0px 20px 35px',
+    components: [
+        {tag: 'span', classes: 'icon-cross', style: 'position: absolute;font-size:20px;height:20px;width:20px;top:70px'},
+        {style: 'position: relative;left: 43px;bottom: 5px;font-size:13px', content: 'Ha ocurrido un error, pulsa para volver a intentarlo'}
+    ],
+    published: {
+        pagina: ''
+    }
+});
+
+enyo.kind({
+    name: 'ErrorComments',
+    kind: 'Control',
+    style: 'font-size: 15px; margin: 20px 0px 20px 35px;position:absolute; z-index: 1',
+    components: [
+        {tag: 'span', classes: 'icon-cross', style: 'position: absolute;font-size:20px;height:20px;width:20px;bottom:6px'},
+        {style: 'position: relative;left: 43px;bottom: 5px;font-size:13px', content: 'Ha ocurrido un error, pulsa para volver a intentarlo'}
+    ],
+    published: {
+        pagina: ''
+    }
+});
+
+
+enyo.kind({
     name: 'Controles',
     kind: 'Control',
     style: 'background: rgba(255, 160, 122, 0.1); height: 40px;',
@@ -383,16 +418,52 @@ enyo.kind({
             {kind: 'FittableRows', classes: 'enyo-fit onyx', components: [
                 {kind: 'Secciones'},
                 {name: 'cargando', kind: 'Cargando', showing: false},
+                {name: 'error', kind: 'Error', showing: false, ontap: 'reintentar'},
                 {name: 'paneles', kind: "Panels", fit:true, draggable: false, animate: false, realtimeFit: true, classes: "enyo-border-box", components: [
                     {name: 'portada', kind: "Noticias", onPulsado: 'pulsado'},
                     {name: 'pendientes', kind: "Noticias", onPulsado: 'pulsado'},
                 ]},
             ]},
-            {name: 'comentarios', kind: 'Comentarios'}
+            {components: [
+                {name: 'errorComentarios', kind: 'ErrorComments', showing: false, ontap: 'reintentarComentarios'},
+                {name: 'comentarios', kind: 'Comentarios'}
+            ]}
         ]},
         {kind: 'Peticiones', classes: 'onyx'},
-        {kind: 'Signals', onPanel: 'panel', onComentarios: 'showComments', onbackbutton: 'back', onCargando:'cargando', ondeviceready: "deviceReady"}
+        {kind: 'Signals', onPanel: 'panel', onComentarios: 'showComments', onbackbutton: 'back', onCargando:'cargando', onError: 'error', onErrorComments: 'errorComments', ondeviceready: "deviceReady"}
 	],
+	errorComments: function(s, p) {
+	    this.$.errorComentarios.setPagina(p);
+	    this.$.errorComentarios.show();
+    },
+    reintentarComentarios: function() {
+        this.$.errorComentarios.hide();
+
+        enyo.Signals.send('onComments', {
+            id: this.$.errorComentarios.pagina,
+            obj: this.$.comentarios
+        });
+    },
+	error: function(s, p) {
+
+	    this.$.cargando.hide();
+	    this.$.error.setPagina(p.name);
+	    this.$.error.show();
+
+	    if (p.pulled) {
+	        p.pulled = false;
+	        p.completePull();
+        }
+    },
+    reintentar: function() {
+        this.$.error.hide();
+        this.$.cargando.show();
+
+        enyo.Signals.send('onNoticias', {
+            feed: this.$.error.pagina,
+            obj: this.$[this.$.error.pagina]
+        });
+    },
 	deviceReady: function() {
 	    MENEAME.plataformas[MENEAME.plataforma].ready();
     },
@@ -411,8 +482,11 @@ enyo.kind({
     },
     cargando: function() {
         this.$.cargando.hide();
+        this.$.error.hide();
     },
 	panel: function(s, p) {
+
+        this.$.error.hide();
 
 	    if (this.$.paneles.getIndex() != MENEAME.secciones[p]) {
 

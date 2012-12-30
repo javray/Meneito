@@ -53,9 +53,11 @@
 .icon-flag:before {
 	content: "\e001";
 }
-
 .icon-arrow-left:before {
 	content: "\e008";
+}
+.icon-cross:before {
+	content: "\e009";
 }
 
 .icono {
