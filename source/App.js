@@ -58,7 +58,7 @@ enyo.kind({
         onDeselect: 'deseleccionado'
     },
     events: {
-        onPulsado: ''
+        onSoltar: ''
     },
     deseleccionado: function(s, e) {
         var port = document.getElementById(this.id + '_port'),
@@ -160,12 +160,7 @@ enyo.kind({
         this.pulled = true;
 
 		setTimeout(enyo.bind(this, function() {
-
-		    enyo.Signals.send('onNoticias', {
-                feed: this.name,
-                obj: this
-            });
-
+            this.doSoltar();
 		}), 1000);
 
     },
@@ -181,7 +176,7 @@ enyo.kind({
 enyo.kind({
     name: 'Peticiones',
     components: [
-        {kind: 'Signals', onNoticias: 'noticias', onComments: 'comments'}
+        {kind: 'Signals', onNoticias: 'noticias', onComments: 'comments', onBuscar: 'buscar'}
     ],
     comments: function(s, p) {
         var url = MENEAME.comentarios(p.id);
@@ -221,6 +216,33 @@ enyo.kind({
 
         jsonp.go();
 
+    },
+    buscar: function(s, p) {
+
+        var url = MENEAME.buscar(p.datos);
+
+        var jsonp = new enyo.JsonpRequest({
+                url: url,
+                callbackName: 'callback'
+        });
+
+        p.obj.setItems([]);
+
+        jsonp.response(this, function(s, r) {
+
+            if (r.query.results == null) {
+                enyo.Signals.send('onNoResults', p);
+            }
+            else {
+                p.obj.setItems(r.query.results.item);
+            }
+        });
+
+        jsonp.error(this, function(s, r) {
+            enyo.Signals.send('onErrorBusqueda', p);
+        });
+
+        jsonp.go();
     }
 });
 
@@ -334,42 +356,49 @@ enyo.kind({
     }
 });
 
-enyo.kind({
-    name: 'Cargando',
-    kind: 'Control',
-    style: 'font-size: 15px;margin: 20px 0px 20px 35px',
-    components: [
-        {tag: 'span', classes: 'icon-cd loading', style: 'position: absolute;font-size:20px;height:20px;width:20px;top:70px'},
-        {style: 'position: relative;left: 43px;bottom: 5px;', content: 'Cargando...'}
-    ]
-});
 
 enyo.kind({
-    name: 'Error',
+    name: 'Mensaje',
     kind: 'Control',
-    style: 'font-size: 15px; margin: 20px 0px 20px 35px',
+    style: 'font-size: 15px; margin: 20px 0px 20px 35px;height:100%',
+    icono: 'icon-cd loading',
+    mensaje: 'Cargando...',
+    floating: false,
     components: [
-        {tag: 'span', classes: 'icon-cross', style: 'position: absolute;font-size:20px;height:20px;width:20px;top:70px'},
-        {style: 'position: relative;left: 43px;bottom: 5px;font-size:13px', content: 'Ha ocurrido un error, pulsa para volver a intentarlo'}
+        {name: 'icono', tag: 'span', classes: '', style: 'position: absolute;font-size:20px;height:20px;width:20px;'},
+        {name: 'mensaje', style: 'position: relative;left: 43px;bottom: 5px;width: 250px', content: ''}
     ],
     published: {
         pagina: ''
+    },
+    create: function() {
+        this.inherited(arguments);
+
+        var that = this,
+            icono = that.$.icono,
+            mensaje = that.$.mensaje;
+
+        that.icono.split(' ').forEach(function(e) {
+            if (!icono.hasClass(e)) {
+                icono.addClass(e);
+            }
+        });
+
+        if (that.floating) {
+            icono.addStyles('top: 0px');
+            that.addStyles('position: absolute; z-index: 1');
+        }
+        else {
+            icono.addStyles('top: 70px');
+        }
+
+        if (that.mensaje.length > 40) {
+            mensaje.addStyles('font-size: 13px');
+        }
+
+        mensaje.setContent(that.mensaje);
     }
 });
-
-enyo.kind({
-    name: 'ErrorComments',
-    kind: 'Control',
-    style: 'font-size: 15px; margin: 20px 0px 20px 35px;position:absolute; z-index: 1',
-    components: [
-        {tag: 'span', classes: 'icon-cross', style: 'position: absolute;font-size:20px;height:20px;width:20px;bottom:6px'},
-        {style: 'position: relative;left: 43px;bottom: 5px;font-size:13px', content: 'Ha ocurrido un error, pulsa para volver a intentarlo'}
-    ],
-    published: {
-        pagina: ''
-    }
-});
-
 
 enyo.kind({
     name: 'Controles',
@@ -405,6 +434,111 @@ enyo.kind({
 });
 
 enyo.kind({
+    name: 'Buscador',
+    kind: 'FittableRows',
+	classes: "enyo-fit onyx", 
+	fit: true,
+	style: 'background:#333; font-size:15px',
+    components: [
+        {style: 'margin: 10px', components: [
+            {kind: "onyx.InputDecorator", style: 'width:90%;border-color:orange', components: [
+                {tag: 'span', classes: 'icon-search', style: 'position: relative; font-size: 20px; color: darkGray;margin-right:5px;'},
+                {kind: "onyx.Input", name:'termino', placeholder: 'Buscar en Méneame'}
+            ]},
+            {tag:'br'},
+            {tag:'br'},
+            {classes: 'onyx-toolbar-inline', components:[
+                {style: 'color: orange; width:35%', content: 'Buscar en'},
+                {kind: "onyx.PickerDecorator", style: 'width: 55%', components: [
+                    {style: 'width: 100%; background-color: orange; font-size:13px;'},
+                    {name: 'buscar_en', kind: "onyx.Picker", style: 'width: 100%;font-size:13px;background:lightsalmon', components: [
+                        {content: "Todo el texto", value:'', active: true},
+                        {content: "Url", value: 'url'},
+                        {content: "Etiquetas", value: 'tags'},
+                        {content: "Titulo", value: 'title'},
+                        {content: "Sitio", value: 'site'}
+                    ]}
+                ]},
+            ]},
+            {classes: 'onyx-toolbar-inline', components:[
+                {style: 'color: orange;width:35%', content: 'Con estado'},
+                {kind: "onyx.PickerDecorator", style: 'width: 55%', components: [
+                    {style: 'width: 100%; background-color: orange;font-size:13px'},
+                    {name: 'estado', kind: "onyx.Picker", style: 'width: 100%;font-size:13px;background:lightsalmon', components: [
+                        {content: "Cualquiera", value:'', active: true},
+                        {content: "Publicada", value: 'published'},
+                        {content: "Pendiente", value: 'queued'},
+                        {content: "Descartada", value: 'discard'},
+                        {content: "Autodescartada", value: 'autodiscard'},
+                        {content: "Descartada por abuso", value: 'abuse'}
+                    ]}
+                ]},
+            ]},
+            {classes: 'onyx-toolbar-inline', components:[
+                {style: 'color: orange;width:35%', content: 'Creadas'},
+                {kind: "onyx.PickerDecorator", style: 'width: 55%', components: [
+                    {style: 'width: 100%; background-color: orange;font-size:13px;'},
+                    {name: 'periodo', kind: "onyx.Picker", style: 'width: 100%;font-size:13px;background:lightsalmon', components: [
+                        {content: "En cualquier momento", value:'', active: true},
+                        {content: "Hace 24 horas", value: '24'},
+                        {content: "Hace 48 horas", value: '48'},
+                        {content: "Hace una semana", value: '168'},
+                        {content: "Hace un mes", value: '720'},
+                        {content: "Hace 6 meses", value: '4320'},
+                        {content: "Hace 1 año", value: '8760'}
+                    ]}
+                ]},
+            ]},
+            {classes: 'onyx-toolbar-inline', components:[
+                {style: 'color: orange;width:35%', content: 'Ordenar por'},
+                {kind: "onyx.PickerDecorator", style: 'width: 55%', components: [
+                    {style: 'width: 100%; background-color: orange;font-size:13px'},
+                    {name: 'ordenar', kind: "onyx.Picker", style: 'width: 100%;font-size:13px;background:lightsalmon', components: [
+                        {content: "Relevancia", value:'', active: true},
+                        {content: "Fecha", value: 'date'}
+                    ]}
+                ]},
+            ]},
+            {classes: 'onyx-toolbar-inline', components:[
+                {style: 'color: orange;width:35%', content: 'Del usuario'},
+                {kind: "onyx.InputDecorator", style: 'width:55%;border-color:orange', components: [
+                    {kind: "onyx.Input", name:'usuario', placeholder: 'Usuario'}
+                ]}
+            ]},
+            {tag:'br'},
+            {tag:'br'},
+            {kind:"onyx.Button", content: "Buscar", style: "background-color: coral; color: #F1F1F1;width:95%;font-size:20px", ontap:"buscar"}
+        ]}
+    ],
+    events: {
+        onRealizarBusqueda:'' 
+    },
+    published: {
+        datos: ''
+    },
+    buscar: function() {
+        var termino = this.$.termino.getValue().trim();
+
+        if (termino != '') {
+
+            this.datos = {
+                q: termino,
+                w: 'links',
+                p: this.$.buscar_en.selected.value,
+                s: this.$.estado.selected.value,
+                h: this.$.periodo.selected.value,
+                o: this.$.ordenar.selected.value,
+                u: this.$.usuario.getValue()
+            };
+
+            this.doRealizarBusqueda(this.datos);
+        }
+
+        this.$.termino.setValue('');
+    }
+});
+
+enyo.kind({
 	name: "App",
     kind: "FittableRows", 
 	classes: "enyo-fit onyx", 
@@ -412,37 +546,95 @@ enyo.kind({
 	components:[
         {kind: "onyx.Toolbar", classes: "onyx-menu-toolbar", style: 'height: 40px', components: [
 			{classes: 'logo', content: "Meneito"},
-            {name: 'volverb', classes: 'icon-arrow-left volver', showing: false, ontap: 'volver'}
+			{name: 'search', classes: 'icon-search buscar', showing: true, ontap: 'buscar'},
+            {name: 'volverb', classes: 'icon-arrow-left volver', showing: false, value: 0, ontap: 'volver'}
 		]},
         {name: 'paginas', kind: 'Panels', fit: true, draggable: false, animate: false, realtimeFit: true, classes: 'enyo-border-box', components: [
             {kind: 'FittableRows', classes: 'enyo-fit onyx', components: [
                 {kind: 'Secciones'},
-                {name: 'cargando', kind: 'Cargando', showing: false},
-                {name: 'error', kind: 'Error', showing: false, ontap: 'reintentar'},
+                {name: 'cargando', kind: 'Mensaje', showing: false},
+                {name: 'error', kind: 'Mensaje', icono: 'icon-cross', mensaje: 'Ha ocurrido un error, toca para volver a intentarlo', showing: false, ontap: 'reintentar'},
                 {name: 'paneles', kind: "Panels", fit:true, draggable: false, animate: false, realtimeFit: true, classes: "enyo-border-box", components: [
-                    {name: 'portada', kind: "Noticias", onPulsado: 'pulsado'},
-                    {name: 'pendientes', kind: "Noticias", onPulsado: 'pulsado'},
+                    {name: 'portada', kind: "Noticias", onSoltar: 'soltar'},
+                    {name: 'pendientes', kind: "Noticias", onSoltar: 'soltar'},
                 ]},
             ]},
             {components: [
-                {name: 'errorComentarios', kind: 'ErrorComments', showing: false, ontap: 'reintentarComentarios'},
+                {name: 'errorComentarios', kind: 'Mensaje', icono: 'icon-cross', mensaje: 'Ha ocurrido un error, toca para volver a intentarlo', floating: true, showing: false, ontap: 'reintentarComentarios'},
                 {name: 'comentarios', kind: 'Comentarios'}
+            ]},
+            {name: 'buscador', kind: 'Buscador', onRealizarBusqueda: 'realizarBusqueda'},
+            {components: [
+                {name: 'errorBusqueda', kind: 'Mensaje', icono: 'icon-cross', mensaje: 'Ha ocurrido un error, toca para volver a intentarlo', floating: true, showing: false, ontap: 'reintentarBusqueda'},
+                {name: 'noResultados', kind: 'Mensaje', icono: 'icon-cross', mensaje: 'No hay resultados, toca para otra búsqueda', floating: true, showing: false, ontap: 'buscar'},
+                {name: 'busqueda', kind: 'Noticias', onSoltar: 'soltar'}
             ]}
         ]},
         {kind: 'Peticiones', classes: 'onyx'},
-        {kind: 'Signals', onPanel: 'panel', onComentarios: 'showComments', onbackbutton: 'back', onCargando:'cargando', onError: 'error', onErrorComments: 'errorComments', ondeviceready: "deviceReady"}
+        {kind: 'Signals', onPanel: 'panel', onComentarios: 'showComments', onbackbutton: 'back', onCargando:'cargando', onError: 'error', onErrorComments: 'errorComments', onErrorBusqueda: 'errorBusqueda', onNoResults: 'noResults', ondeviceready: "deviceReady"}
 	],
+	soltar: function(s, e) {
+
+        if (s.name == 'busqueda') {
+            enyo.Signals.send('onBuscar', {
+                datos: this.$.buscador.datos,
+                obj: s
+            });
+        }
+        else {
+            enyo.Signals.send('onNoticias', {
+                feed: s.name,
+                obj: s
+            });
+        }
+    },
+	realizarBusqueda: function(s, p) {
+	    enyo.Signals.send('onBuscar', {
+	        datos: p,
+	        obj: this.$.busqueda
+        });
+
+        this.$.noResultados.hide();
+
+        this.$.paginas.setIndex(3);
+        this.$.volverb.value = 0;
+        this.$.volverb.show();
+        this.$.search.hide();
+    },
+	buscar: function() {
+	    this.$.paginas.setIndex(2);
+	    this.$.volverb.value = 0;
+	    this.$.search.hide();
+	    this.$.volverb.show();
+    },
 	errorComments: function(s, p) {
 	    this.$.errorComentarios.setPagina(p);
 	    this.$.errorComentarios.show();
     },
+	errorBusqueda: function(s, p) {
+	    this.$.errorBusqueda.show();
+    },
+    noResults: function(s, p) {
+        this.$.noResultados.show();
+    },
     reintentarComentarios: function() {
+
         this.$.errorComentarios.hide();
 
         enyo.Signals.send('onComments', {
             id: this.$.errorComentarios.pagina,
             obj: this.$.comentarios
         });
+    },
+    reintentarBusqueda: function() {
+
+        this.$.errorBusqueda.hide();
+
+        enyo.Signals.send('onBuscar', {
+            datos: this.$.buscador.datos,
+            obj: this.$.busqueda
+        });
+
     },
 	error: function(s, p) {
 
@@ -468,16 +660,30 @@ enyo.kind({
 	    MENEAME.plataformas[MENEAME.plataforma].ready();
     },
     volver: function() {
-        this.$.paginas.setIndex(0);
-        this.$.volverb.hide();
+
+        this.$.paginas.setIndex(this.$.volverb.value);
+
+        if (this.$.volverb.value == 0) {
+            this.$.volverb.hide();
+            this.$.search.show();
+        }
+
+        this.$.volverb.value = 0;
     },
 	back: function(e) {
 	    if (this.$.paginas.getIndex() == 0) {
 	        navigator.app.exitApp();
         }
         else {
-	        this.$.paginas.setIndex(0);
-            this.$.volverb.hide();
+
+	        this.$.paginas.setIndex(this.$.volverb.value);
+
+	        if (this.$.volverb.value == 0) {
+                this.$.volverb.hide();
+                this.$.search.show();
+            }
+
+            this.$.volverb.value = 0;
         }
     },
     cargando: function() {
@@ -491,6 +697,7 @@ enyo.kind({
 	    if (this.$.paneles.getIndex() != MENEAME.secciones[p]) {
 
             this.$.paneles.setIndex(MENEAME.secciones[p]);
+            this.$.volverb.value = 0;
 
             this.$.cargando.show();
 
@@ -501,13 +708,20 @@ enyo.kind({
         }
     },
     showComments: function(s, p) {
+
+        this.$.comentarios.setItems([]);
         this.$.comentarios.setCount(0);
+
         enyo.Signals.send('onComments', {
             id: p,
             obj: this.$.comentarios
         });
+
+        this.$.volverb.value = this.$.paginas.getIndex();
+
         this.$.paginas.setIndex(1);
         this.$.volverb.show();
+        this.$.search.hide();
     },
 	rendered: function() {
 	    this.inherited(arguments);
@@ -534,6 +748,19 @@ enyo.kind({
 
     MENEAME.comentarios = function(id) {
         return ant + encodeURIComponent("select * from rss where url = 'http://www.meneame.net/comments_rss2.php?id=" + id + "'") + post;
+    }
+
+    MENEAME.buscar = function(datos) {
+
+        var parametros = '?q=' + escape(datos.q);
+        parametros += '&w=' + datos.w;
+        parametros += '&p=' + datos.p;
+        parametros += '&s=' + datos.s;
+        parametros += '&h=' + datos.h;
+        parametros += '&o=' + datos.o;
+        parametros += '&u=' + datos.u;
+
+        return ant + encodeURIComponent("select * from rss where url = 'http://www.meneame.net/rss2.php" + parametros + "'") + post;
     }
 
     MENEAME.secciones = {

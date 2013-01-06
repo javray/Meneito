@@ -1215,6 +1215,9 @@
 .icon-cross:before {
 	content: "\e009";
 }
+.icon-search:before {
+	content: "\e00a";
+}
 
 .icono {
 /* -webkit-mask-image: -webkit-gradient(linear, left top, left bottom, from(rgba(0,0,0,1)), to(rgba(0,0,0,0.5)));*/
@@ -1335,6 +1338,28 @@ height:1%;
 
 .volver:active {
     color: darkorange;
+}
+
+.buscar {
+    color: orange;
+    height: 20px;
+    float: right;
+    font-size: 30px;
+    position: relative;
+    bottom: 11px;
+}
+
+.buscar:active {
+    color: darkorange;
+}
+
+.onyx-picker .onyx-menu-item.selected {
+    background: salmon;
+}
+
+
+.onyx-picker .onyx-menu-item:active:hover {
+    background-color: salmon!important;
 }
 
 @-webkit-keyframes rotating {
