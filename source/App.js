@@ -24,12 +24,11 @@ enyo.kind({
     name: 'Noticias',
     kind: 'PulldownList',
     fit: true,
-    classes: 'enyo-fit onyx',
     toggleSelected: true,
     pullingMessage:'Desliza hacia abajo para refrescar...',
     pulledMessage: 'Suelta para refrescar...',
     loadingMessage: 'Cargando...',
-    loadingIconClass: 'icon-cd loading pull',
+    loadingIconClass: 'icon-cd pull',
     components: [
         {name:'principal', style: "padding: 10px;", classes: "enyo-border-box list-item", ontap: 'pulse', components: [
             {style: 'float:left;min-height:80px;width:55px', components:[
@@ -187,7 +186,12 @@ enyo.kind({
         });
 
         jsonp.response(this, function(s, r) {
-            p.obj.setItems(r.query.results.item);
+            if (r.query.results == null) {
+                enyo.Signals.send('onErrorComments', p.id);
+            }
+            else {
+                p.obj.setItems(r.query.results.item);
+            }
         });
 
         jsonp.error(this, function(s, r) {
@@ -206,8 +210,13 @@ enyo.kind({
         });
 
         jsonp.response(this, function(s, r) {
-            p.obj.setItems(r.query.results.item);
-            enyo.Signals.send('onCargando');
+            if (r.query.results == null) {
+                enyo.Signals.send('onError', p.obj);
+            }
+            else {
+                p.obj.setItems(r.query.results.item);
+                enyo.Signals.send('onCargando');
+            }
         });
 
         jsonp.error(this, function(s, r) {
@@ -539,10 +548,58 @@ enyo.kind({
 });
 
 enyo.kind({
+    name: 'Share',
+    kind: 'onyx.Popup',
+    modal: true,
+    scrim: true,
+    floating: true,
+    style: 'bottom:0px;left:0px;height:140px;width:100%;background:gray',
+    components:[
+        {classes: 'onyx-toolbar-inline', components:[
+            {name: 'facebook', kind:"onyx.Button", classes: "onyx-dark", style: 'width:92%', ontap:"compartir", components:[
+                {tag: 'span', classes: 'icon-facebook', style: 'padding-right:5px'},
+                {content: 'Facebook'}
+            ]},
+        ]},
+        {classes: 'onyx-toolbar-inline', components:[
+            {name: 'twitter', kind:"onyx.Button", classes: "onyx-dark", style: 'width:92%', ontap:"compartir", components:[
+                {tag: 'span', classes: 'icon-twitter', style: 'padding-right:5px'},
+                {content: 'Twitter'}
+            ]},
+        ]},
+        {classes: 'onyx-toolbar-inline', components:[
+            {name: 'clipboard', kind:"onyx.Button", classes: "onyx-dark", style: 'width:92%', ontap:"compartir", components:[
+                {tag: 'span', classes: 'icon-docs', style: 'padding-right:5px'},
+                {content: 'Copiar al portapapeles'}
+            ]},
+        ]}
+    ],
+    published: {
+        subject: '',
+        text: ''
+    },
+    events: {
+        onSharing: ''
+    },
+    compartir: function(s, e) {
+
+		setTimeout(enyo.bind(this, function() {
+            this.doSharing({
+                subject: this.subject,
+                text: this.text,
+                with: s.name
+            });
+        }), 100);
+
+        this.hide();
+    }
+});
+
+
+enyo.kind({
 	name: "App",
     kind: "FittableRows", 
-	classes: "enyo-fit onyx", 
-	fit: true,
+	classes: "enyo-unselectable enyo-fit onyx", 
 	components:[
         {kind: "onyx.Toolbar", classes: "onyx-menu-toolbar", style: 'height: 40px', components: [
 			{classes: 'logo', content: "Meneito"},
@@ -570,9 +627,19 @@ enyo.kind({
                 {name: 'busqueda', kind: 'Noticias', onSoltar: 'soltar'}
             ]}
         ]},
+        {name: 'share', kind: 'Share', classes: 'onyx', onSharing: 'sharing'},
         {kind: 'Peticiones', classes: 'onyx'},
-        {kind: 'Signals', onPanel: 'panel', onComentarios: 'showComments', onbackbutton: 'back', onCargando:'cargando', onError: 'error', onErrorComments: 'errorComments', onErrorBusqueda: 'errorBusqueda', onNoResults: 'noResults', ondeviceready: "deviceReady"}
+        {kind: 'Signals', onPanel: 'panel', onComentarios: 'showComments', onbackbutton: 'back', onCargando:'cargando', onError: 'error', onErrorComments: 'errorComments', onErrorBusqueda: 'errorBusqueda', onNoResults: 'noResults', onShare: 'share', ondeviceready: "deviceReady"}
 	],
+	sharing: function(s, e) {
+	    MENEAME.share[e.with](e.subject, e.text);
+    },
+	share: function(s, p) {
+	    this.$.share.setSubject(p.subject);
+	    this.$.share.setText(p.text);
+	    this.$.share.addClass('fadeInUpBig');
+	    this.$.share.show();
+    },
 	soltar: function(s, e) {
 
         if (s.name == 'busqueda') {
@@ -783,6 +850,7 @@ enyo.kind({
     MENEAME.plataformas = {
         Android: {
             ready: function() {
+                navigator.splashscreen.hide();
                 enyo.dispatcher.listen(document, "backbutton");
             },
             showPage: function(url) {
@@ -799,7 +867,7 @@ enyo.kind({
         },
         iOS: {
             ready: function() {
-	            ChildBrowser.install();
+	            FBConnect.install();
             },
             showPage: function(url) {
                 var cb =  window.plugins.childBrowser;
@@ -809,8 +877,11 @@ enyo.kind({
                 cb.showWebPage(url);
             },
             share: function(subject, text) {
-                navigator.notification.alert('Funcionalidad en desarrollo, sé paciente :-)', function(){}, 'Meneito');
-                //window.plugins.shareKit.share(subject, text);
+                enyo.Signals.send('onShare', {
+                    subject: subject,
+                    text: text
+                });
+                //navigator.notification.alert('Funcionalidad en desarrollo, sé paciente :-)', function(){}, 'Meneito');
             }
         },
         default: {
@@ -821,6 +892,32 @@ enyo.kind({
             },
             share: function(subject, text) {
             }
+        }
+    };
+
+    MENEAME.client_id = '428428230563845';
+    MENEAME.redir_url = 'http://www.facebook.com/connect/login_success.html';
+
+    MENEAME.share = {
+        facebook: function(subject, text) {
+            var fb = window.plugins.fbConnect;
+            fb.connect(MENEAME.client_id, MENEAME.redir_url, "touch");
+            fb.onConnect = function() {
+	
+                fb.postFBWall(subject, text, null, function() {
+                    console.log('inside callback after postFBWall');
+                });
+	        };
+        },
+        twitter: function(subject, text) {
+            window.plugins.twitter.composeTweet(
+            function(s){ console.log("tweet success"); }, 
+            function(e){ console.log("tweet failure: " + e); }, 
+            text);
+
+        },
+        clipboard: function(subject, text) {
+            window.plugins.clipboardPlugin.setText(text);
         }
     }
 

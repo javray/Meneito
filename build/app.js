@@ -470,7 +470,7 @@ pullCancel: function() {
 this.setPulling(), this.doPullCancel();
 },
 pullRelease: function() {
-this.$.puller.setShowing(!1), this.pully.setShowing(!0), this.doPullRelease();
+this.$.puller.setShowing(!1), console.log(this.pully), this.pully.setShowing(!0), this.doPullRelease();
 },
 setPulling: function() {
 this.$.puller.setText(this.pullingMessage), this.$.puller.setIconClass(this.pullingIconClass);
@@ -3567,12 +3567,11 @@ this.$.thumb.setSrc(this.thumb);
 name: "Noticias",
 kind: "PulldownList",
 fit: !0,
-classes: "enyo-fit onyx",
 toggleSelected: !0,
 pullingMessage: "Desliza hacia abajo para refrescar...",
 pulledMessage: "Suelta para refrescar...",
 loadingMessage: "Cargando...",
-loadingIconClass: "icon-cd loading pull",
+loadingIconClass: "icon-cd pull",
 components: [ {
 name: "principal",
 style: "padding: 10px;",
@@ -3681,7 +3680,7 @@ url: n,
 callbackName: "callback"
 });
 r.response(this, function(e, n) {
-t.obj.setItems(n.query.results.item);
+n.query.results == null ? enyo.Signals.send("onErrorComments", t.id) : t.obj.setItems(n.query.results.item);
 }), r.error(this, function(e, n) {
 enyo.Signals.send("onErrorComments", t.id);
 }), r.go();
@@ -3692,7 +3691,7 @@ url: n,
 callbackName: "callback"
 });
 r.response(this, function(e, n) {
-t.obj.setItems(n.query.results.item), enyo.Signals.send("onCargando");
+n.query.results == null ? enyo.Signals.send("onError", t.obj) : (t.obj.setItems(n.query.results.item), enyo.Signals.send("onCargando"));
 }), r.error(this, function(e, n) {
 enyo.Signals.send("onError", t.obj);
 }), r.go();
@@ -4075,10 +4074,81 @@ u: this.$.usuario.getValue()
 }, this.doRealizarBusqueda(this.datos)), this.$.termino.setValue("");
 }
 }), enyo.kind({
+name: "Share",
+kind: "onyx.Popup",
+modal: !0,
+scrim: !0,
+floating: !0,
+style: "bottom:0px;left:0px;height:140px;width:100%;background:gray",
+components: [ {
+classes: "onyx-toolbar-inline",
+components: [ {
+name: "facebook",
+kind: "onyx.Button",
+classes: "onyx-dark",
+style: "width:92%",
+ontap: "compartir",
+components: [ {
+tag: "span",
+classes: "icon-facebook",
+style: "padding-right:5px"
+}, {
+content: "Facebook"
+} ]
+} ]
+}, {
+classes: "onyx-toolbar-inline",
+components: [ {
+name: "twitter",
+kind: "onyx.Button",
+classes: "onyx-dark",
+style: "width:92%",
+ontap: "compartir",
+components: [ {
+tag: "span",
+classes: "icon-twitter",
+style: "padding-right:5px"
+}, {
+content: "Twitter"
+} ]
+} ]
+}, {
+classes: "onyx-toolbar-inline",
+components: [ {
+name: "clipboard",
+kind: "onyx.Button",
+classes: "onyx-dark",
+style: "width:92%",
+ontap: "compartir",
+components: [ {
+tag: "span",
+classes: "icon-docs",
+style: "padding-right:5px"
+}, {
+content: "Copiar al portapapeles"
+} ]
+} ]
+} ],
+published: {
+subject: "",
+text: ""
+},
+events: {
+onSharing: ""
+},
+compartir: function(e, t) {
+setTimeout(enyo.bind(this, function() {
+this.doSharing({
+subject: this.subject,
+text: this.text,
+"with": e.name
+});
+}), 100), this.hide();
+}
+}), enyo.kind({
 name: "App",
 kind: "FittableRows",
-classes: "enyo-fit onyx",
-fit: !0,
+classes: "enyo-unselectable enyo-fit onyx",
 components: [ {
 kind: "onyx.Toolbar",
 classes: "onyx-menu-toolbar",
@@ -4181,6 +4251,11 @@ onSoltar: "soltar"
 } ]
 } ]
 }, {
+name: "share",
+kind: "Share",
+classes: "onyx",
+onSharing: "sharing"
+}, {
 kind: "Peticiones",
 classes: "onyx"
 }, {
@@ -4193,8 +4268,15 @@ onError: "error",
 onErrorComments: "errorComments",
 onErrorBusqueda: "errorBusqueda",
 onNoResults: "noResults",
+onShare: "share",
 ondeviceready: "deviceReady"
 } ],
+sharing: function(e, t) {
+MENEAME.share[t.with](t.subject, t.text);
+},
+share: function(e, t) {
+this.$.share.setSubject(t.subject), this.$.share.setText(t.text), this.$.share.addClass("fadeInUpBig"), this.$.share.show();
+},
 soltar: function(e, t) {
 e.name == "busqueda" ? enyo.Signals.send("onBuscar", {
 datos: this.$.buscador.datos,
@@ -4297,7 +4379,7 @@ n.plataforma = "default";
 n.plataformas = {
 Android: {
 ready: function() {
-enyo.dispatcher.listen(document, "backbutton");
+navigator.splashscreen.hide(), enyo.dispatcher.listen(document, "backbutton");
 },
 showPage: function(t) {
 e.plugins.childBrowser.showWebPage(t, {
@@ -4315,14 +4397,17 @@ alert("Share failed");
 },
 iOS: {
 ready: function() {
-ChildBrowser.install();
+FBConnect.install();
 },
 showPage: function(t) {
 var n = e.plugins.childBrowser;
 n.onLocationChange = function() {}, n.onClose = function() {}, n.onOpenExternal = function() {}, n.showWebPage(t);
 },
 share: function(e, t) {
-navigator.notification.alert("Funcionalidad en desarrollo, s\u00e9 paciente :-)", function() {}, "Meneito");
+enyo.Signals.send("onShare", {
+subject: e,
+text: t
+});
 }
 },
 "default": {
@@ -4331,6 +4416,25 @@ showPage: function(t) {
 e.open(t);
 },
 share: function(e, t) {}
+}
+}, n.client_id = "428428230563845", n.redir_url = "http://www.facebook.com/connect/login_success.html", n.share = {
+facebook: function(t, r) {
+var i = e.plugins.fbConnect;
+i.connect(n.client_id, n.redir_url, "touch"), i.onConnect = function() {
+i.postFBWall(t, r, null, function() {
+console.log("inside callback after postFBWall");
+});
+};
+},
+twitter: function(t, n) {
+e.plugins.twitter.composeTweet(function(e) {
+console.log("tweet success");
+}, function(e) {
+console.log("tweet failure: " + e);
+}, n);
+},
+clipboard: function(t, n) {
+e.plugins.clipboardPlugin.setText(n);
 }
 }, e.MENEAME = n;
 }(window);

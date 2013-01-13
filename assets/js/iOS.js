@@ -86,94 +86,288 @@ if (cordovaRef && cordovaRef.addConstructor) {
 
 })();
 
-//
-//  ShareKitPlugin.js
-//  
-//
-//  Created by Erick Camacho on 28/07/11.
-//  MIT Licensed
-//
+/**
+ * @author sam
+ */
+/* MIT licensed */
+// (c) 2010 Jesse MacFadyen, Nitobi
+// Contributions, advice from : 
+// http://www.pushittolive.com/post/1239874936/facebook-login-on-iphone-phonegap
 
-function ShareKitPlugin()
+function FBConnect()
 {
-	console.log('creating plugin');
-};
+	if(window.plugins.childBrowser == null)
+	{
+		ChildBrowser.install();
+	}
+}
 
-ShareKitPlugin.prototype.share = function(message, url)
+FBConnect.prototype.connect = function(client_id,redirect_uri,display)
 {
-	cordova.exec(null, null, "ShareKitPlugin", "share", [message, url]);
-    
-};
+	this.client_id = client_id;
+	this.redirect_uri = redirect_uri;
+	
+	var authorize_url  = "https://graph.facebook.com/oauth/authorize?";
+	authorize_url += "client_id=" + client_id;
+	authorize_url += "&redirect_uri=" + redirect_uri;
+	authorize_url += "&display="+ ( display ? display : "touch" );
+	authorize_url += "&type=user_agent";
+	//if you want to post message on the wall : publish_stream, offline_access,
+	authorize_url += "&scope=offline_access,publish_stream";
+	
+	window.plugins.childBrowser.showWebPage(authorize_url);
+	var self = this;
+	window.plugins.childBrowser.onLocationChange = function(loc){self.onLocationChange(loc);};
+}
+
+FBConnect.prototype.onLocationChange = function(newLoc)
+{
+	if(newLoc.indexOf(this.redirect_uri) == 0)
+	{
+		console.log('onLocationChange url='+newLoc);
+		var result = unescape(newLoc).split("#")[1];
+		result = unescape(result);
+		
+		// TODO: Error Check
+		this.accessToken = result.split("&")[0].split("=")[1];		
+		//this.expiresIn = result.split("&")[1].split("=")[1];
+		
+		window.plugins.childBrowser.close();
+		this.onConnect();
+		
+	}
+}
+
+FBConnect.prototype.getFriends = function()
+{
+	var url = "https://graph.facebook.com/me/friends?access_token=" + this.accessToken;
+	var req = new XMLHttpRequest();
+	
+	req.open("get",url,true);
+	req.send(null);
+	req.onerror = function(){alert("Error");};
+	return req;
+}
 
 
-ShareKitPlugin.prototype.isLoggedToTwitter = function( callback )
+FBConnect.prototype.postFBWall = function(message, urlPost, urlPicture, callBack)
 {
 	
-    cordova.exec(callback, null, "ShareKitPlugin", "isLoggedToTwitter", [] );
-};
-
-ShareKitPlugin.prototype.isLoggedToFacebook = function( callback )
-{
+	console.log('inside postFBWall '+message + ' urlPost='+urlPost + ' urlPicture='+urlPicture);
 	
-    cordova.exec(callback, null, "ShareKitPlugin", "isLoggedToFacebook", [] );
-
-};
-
-ShareKitPlugin.prototype.logoutFromTwitter = function()
-{
+	var url = 'https://graph.facebook.com/me/feed?access_token=' + this.accessToken+'&message='+message;
 	
-    cordova.exec(null, null, "ShareKitPlugin", "logoutFromTwitter", [] );
-
-};
-
-ShareKitPlugin.prototype.logoutFromFacebook = function()
-{
+	if (urlPost) {
+		url += '&link='+encodeURIComponent(urlPost);
+	}
+	if (urlPicture) {
+		url += '&picture='+encodeURIComponent(urlPicture);
+	}
 	
-    cordova.exec(null, null, "ShareKitPlugin", "logoutFromFacebook", [] );
-
-};
-
-
-ShareKitPlugin.prototype.facebookConnect = function()
-{
+	var req = this.postFBGraph(url);
 	
-    cordova.exec(null, null, "ShareKitPlugin", "facebookConnect", [] );
-    
-};
+	req.onload = callBack;
+}
 
-ShareKitPlugin.prototype.shareToFacebook = function( message, url)
+FBConnect.prototype.postFBGraph = function(url)
 {
+	console.log('inside postFBGraph url='+url);
 	
-    cordova.exec(null, null, "ShareKitPlugin", "shareToFacebook", [message, url] );
-    
-};
-
-ShareKitPlugin.prototype.shareToTwitter = function( message, url)
-{
+	var req = new XMLHttpRequest(); 
+	req.open("POST", url, true); 
+	/*req.onreadystatechange = function() {//Call a function when the state 
+	 if(req.readyState == 4 && req.status == 200) { 
+	 alert(req.responseText); 
+	 }
+	 };*/
 	
-    cordova.exec(null, null, "ShareKitPlugin", "shareToTwitter", [message, url] );
-    
-};
+	req.send(null); 
+	return req; 
+}
 
-ShareKitPlugin.prototype.shareToMail = function( subject, message)
+
+// Note: this plugin does NOT install itself, call this method some time after deviceready to install it
+// it will be returned, and also available globally from window.plugins.fbConnect
+FBConnect.install = function()
 {
-	
-    cordova.exec(null, null, "ShareKitPlugin", "shareToMail", [subject, message] );
-    
+    console.log('FBConnect.install');
+	if(!window.plugins)
+	{
+		window.plugins = {};	
+	}
+
+	window.plugins.fbConnect = new FBConnect();
+}
+
+/**
+ * @constructor
+ */
+var Twitter = function(){};
+/**
+ * Checks if the Twitter SDK is loaded
+ * @param {Function} response callback on result
+ * @param {Number} response.response is 1 for success, 0 for failure
+ * @example
+ *      window.plugins.twitter.isTwitterAvailable(function (response) {
+ *          console.log("twitter available? " + response);
+ *      });
+ */
+Twitter.prototype.isTwitterAvailable = function(response){
+    cordova.exec(response, null, "TwitterPlugin", "isTwitterAvailable", []);
 };
-
-
-
-
-ShareKitPlugin.install = function()
-{
-    if(!window.plugins)
-    {
-        window.plugins = {};	
-    }
-
-    window.plugins.shareKit = new ShareKitPlugin();
-    return window.plugins.shareKit;
+/**
+ * Checks if the Twitter SDK can send a tweet
+ * @param {Function} response callback on result
+ * @param {Number} response.response is 1 for success, 0 for failure
+ * @example
+ *      window.plugins.twitter.isTwitterSetup(function (r) {
+ *          console.log("twitter configured? " + r);
+ *      });
+ */
+Twitter.prototype.isTwitterSetup = function(response){
+    cordova.exec(response, null, "TwitterPlugin", "isTwitterSetup", []);
 };
+/**
+ * Sends a Tweet to Twitter
+ * @param {Function} success callback
+ * @param {Function} failure callback
+ * @param {String} failure.error reason for failure
+ * @param {String} tweetText message to send to twitter
+ * @param {Object} options (optional)
+ * @param {String} options.urlAttach URL to embed in Tweet
+ * @param {String} options.imageAttach Image URL to embed in Tweet
+ * @param {Number} response.response - 1 on success, 0 on failure
+ * @example
+ *     window.plugins.twitter.composeTweet(
+ *         function () { console.log("tweet success"); }, 
+ *         function (error) { console.log("tweet failure: " + error); }, 
+ *         "Text, Image, URL", 
+ *         {
+ *             urlAttach:"http://m.youtube.com/#/watch?v=obx2VOtx0qU", 
+ *             imageAttach:"http://i.ytimg.com/vi/obx2VOtx0qU/hqdefault.jpg?w=320&h=192&sigh=QD3HYoJj9dtiytpCSXhkaq1oG8M"
+ *         }
+ * );
+ */
+Twitter.prototype.composeTweet = function(success, failure, tweetText, options){
+    options = options || {};
+    options.text = tweetText;
+    cordova.exec(success, failure, "TwitterPlugin", "composeTweet", [options]);
+};
+/**
+ * Gets Tweets from Twitter Timeline
+ * @param {Function} success callback
+ * @param {Object[]} success.response Tweet objects, see [Twitter Timeline Doc]
+ * @param {Function} failure callback
+ * @param {String} failure.error reason for failure
+ * @example
+ *     window.plugins.twitter.getPublicTimeline(
+ *         function (response) { console.log("timeline success: " + JSON.stringify(response)); }, 
+ *         function (error) { console.log("timeline failure: " + error); }
+ *     );
+ * 
+ * [Twitter Timeline Doc]: https://dev.twitter.com/docs/api/1/get/statuses/public_timeline
+ */
+Twitter.prototype.getPublicTimeline = function(success, failure){
+    cordova.exec(success, failure, "TwitterPlugin", "getPublicTimeline", []);
+};
+/**
+ * Gets Tweets from Twitter Mentions
+ * @param {Function} success callback
+ * @param {Object[]} success.result Tweet objects, see [Twitter Mentions Doc]
+ * @param {Function} failure callback
+ * @param {String} failure.error reason for failure
+ * @example
+ *     window.plugins.twitter.getMentions(
+ *         function (response) { console.log("mentions success: " + JSON.stringify(response)); },
+ *         function (error) { console.log("mentions failure: " + error); }
+ *     );
+ * 
+ * [Twitter Timeline Doc]: https://dev.twitter.com/docs/api/1/get/statuses/public_timeline
+ */
+Twitter.prototype.getMentions = function(success, failure){
+    cordova.exec(success, failure, "TwitterPlugin", "getMentions", []);
+};
+/**
+ * Gets Tweets from Twitter Mentions API
+ * @param {Function} success callback
+ * @param {String} success.response Twitter Username
+ * @param {Object[]} success.result Tweet objects, see [Twitter Mentions Doc]
+ * @param {Function} failure callback
+ * @param {String} failure.error reason for failure
+ * 
+ * [Twitter Mentions Doc]: https://dev.twitter.com/docs/api/1/get/statuses/mentions
+ */
+Twitter.prototype.getTwitterUsername = function(success, failure) {
+    cordova.exec(success, failure, "TwitterPlugin", "getTwitterUsername", []);
+};
+/**
+ * Gets Tweets from Twitter Mentions API
+ * @param {String} url of [Twitter API Endpoint]
+ * @param {Object} params key-value map, matching [Twitter API Endpoint]
+ * @param {Function} success callback
+ * @param {Object[]} success.response objects returned from Twitter API (Tweets, Users,...)
+ * @param {Function} failure callback
+ * @param {String} failure.error reason for failure
+ * @param {Object} options (optional) other options for the HTTP request
+ * @param {String} options.requestMethod HTTP Request type, ex: "POST"
+ * @example
+ *     window.plugins.twitter.getTWRequest(
+ *          'users/lookup.json',
+ *          {user_id: '16141659,783214,6253282'},
+ *          function (response) { console.log("usersLookup success: " + JSON.stringify(response)); }, 
+ *          function (error) { console.log("usersLookup failure: " + error); },
+ *          {requestMethod: 'POST'}
+ *     );
+ * 
+ * [Twitter API Endpoints]: https://dev.twitter.com/docs/api
+ */
+Twitter.prototype.getTWRequest = function(url, params, success, failure, options){
+    options = options || {};
+    options.url = url;
+    options.params = params;
+    cordova.exec(success, failure, "TwitterPlugin", "getTWRequest", [options]);
+};
+// Plug in to Cordova
+cordova.addConstructor(function() {
+					   
+					   /* shim to work in 1.5 and 1.6  */
+						if (!window.Cordova) {
+						window.Cordova = cordova;
+						};
+						
+					   
+					   if(!window.plugins) window.plugins = {};
+					   window.plugins.twitter = new Twitter();
+					   });
+/**
+ * Clipboard plugin for PhoneGap
+ * 
+ * @constructor
+ */
+function ClipboardPlugin(){ }
 
-cordova.addConstructor(ShareKitPlugin.install);
+/**
+ * Set the clipboard text
+ *
+ * @param {String} text The new clipboard content
+ */
+ClipboardPlugin.prototype.setText = function(text) {
+	PhoneGap.exec("ClipboardPlugin.setText", text);
+}
+
+/**
+ * Get the clipboard text
+ *
+ * @param {String} text The new clipboard content
+ */
+ClipboardPlugin.prototype.getText = function(callback) {
+	PhoneGap.exec(callback, null, "ClipboardPlugin", "getText", []);
+}
+
+/**
+ * Register the plugin with PhoneGap
+ */
+PhoneGap.addConstructor(function() {
+	if(!window.plugins) window.plugins = {};
+	window.plugins.clipboardPlugin = new ClipboardPlugin();
+});

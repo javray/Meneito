@@ -1218,6 +1218,15 @@
 .icon-search:before {
 	content: "\e00a";
 }
+.icon-twitter:before {
+	content: "\e00b";
+}
+.icon-facebook:before {
+	content: "\e00e";
+}
+.icon-docs:before {
+	content: "\e00f";
+}
 
 .icono {
 /* -webkit-mask-image: -webkit-gradient(linear, left top, left bottom, from(rgba(0,0,0,1)), to(rgba(0,0,0,0.5)));*/
@@ -1311,7 +1320,7 @@ height:1%;
 }
 
 .enyo-puller-text {
-    font-size: 15px;
+    font-size: 14px;
 }
 
 .loading {
@@ -1370,5 +1379,23 @@ height:1%;
         -webkit-transform: rotate(360deg);
     }
 }
+
+@-webkit-keyframes fadeInUpBig {
+	0% {
+		opacity: 0;
+		-webkit-transform: translateY(2000px);
+	}
+	
+	100% {
+		opacity: 1;
+		-webkit-transform: translateY(0);
+	}
+}
+
+.fadeInUpBig {
+	-webkit-animation-name: fadeInUpBig;
+	-webkit-animation-duration: 0.3s;
+
+
 
 
